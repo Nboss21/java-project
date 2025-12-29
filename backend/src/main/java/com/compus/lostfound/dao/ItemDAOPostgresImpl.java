@@ -3,7 +3,6 @@ package com.campus.lostfound.dao;
 import com.campus.lostfound.model.Item;
 
 import java.sql.*;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -15,15 +14,20 @@ import java.util.UUID;
  * Postgres URL (postgres://user:pass@host:port/db) which will be converted.
  */
 public class ItemDAOPostgresImpl implements ItemDAO {
+    private Connection sharedConnection;
     private final String jdbcUrl;
-    private final String user;
-    private final String password;
 
     public ItemDAOPostgresImpl(String databaseUrl) throws SQLException {
         // Use java.net.URI to robustly parse postgres URIs and preserve query params.
         String tmpUser = null;
         String tmpPassword = null;
         String tmpJdbc = null;
+        
+        try {
+            Class.forName("org.postgresql.Driver");
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("PostgreSQL Driver not found", e);
+        }
 
         try {
             if (databaseUrl.startsWith("jdbc:postgresql://")) {
@@ -37,14 +41,25 @@ public class ItemDAOPostgresImpl implements ItemDAO {
                 }
 
                 // Extract user and password from userInfo if present
-                String userInfo = uri.getUserInfo();
+                String userInfo = uri.getRawUserInfo();
                 if (userInfo != null) {
                     String[] up = userInfo.split(":", 2);
-                    tmpUser = java.net.URLDecoder.decode(up[0], java.nio.charset.StandardCharsets.UTF_8.name());
-                    if (up.length == 2) {
-                        tmpPassword = java.net.URLDecoder.decode(up[1], java.nio.charset.StandardCharsets.UTF_8.name());
+                    String rawUser = up[0];
+                    String rawPass = (up.length == 2) ? up[1] : null;
+
+                    tmpUser = java.net.URLDecoder.decode(rawUser, java.nio.charset.StandardCharsets.UTF_8.name());
+                    if (rawPass != null) {
+                        tmpPassword = java.net.URLDecoder.decode(rawPass, java.nio.charset.StandardCharsets.UTF_8.name());
                     }
+                    
+                    System.out.println("DEBUG: Raw User: " + rawUser);
+                    System.out.println("DEBUG: Decoded User: " + tmpUser);
+                    System.out.println("DEBUG: Raw Pass (first 2): " + (rawPass != null && rawPass.length() > 2 ? rawPass.substring(0, 2) : "N/A"));
+                    System.out.println("DEBUG: Decoded Pass (first 2): " + (tmpPassword != null && tmpPassword.length() > 2 ? tmpPassword.substring(0, 2) : "N/A"));
+                    System.out.println("DEBUG: Decoded Pass (last 2): " + (tmpPassword != null && tmpPassword.length() > 2 ? tmpPassword.substring(tmpPassword.length() - 2) : "N/A"));
                 }
+                
+
 
                 String host = uri.getHost();
                 int port = uri.getPort();
@@ -59,6 +74,19 @@ public class ItemDAOPostgresImpl implements ItemDAO {
                 sb.append("/").append(dbName);
                 if (query != null && !query.isEmpty()) {
                     sb.append("?").append(query);
+                    if (tmpUser != null) {
+                        sb.append("&user=").append(java.net.URLEncoder.encode(tmpUser, "UTF-8"));
+                    }
+                    if (tmpPassword != null) {
+                        sb.append("&password=").append(java.net.URLEncoder.encode(tmpPassword, "UTF-8"));
+                    }
+                } else {
+                    if (tmpUser != null) {
+                        sb.append("?user=").append(java.net.URLEncoder.encode(tmpUser, "UTF-8"));
+                        if (tmpPassword != null) {
+                            sb.append("&password=").append(java.net.URLEncoder.encode(tmpPassword, "UTF-8"));
+                        }
+                    }
                 }
 
                 tmpJdbc = sb.toString();
@@ -68,21 +96,33 @@ public class ItemDAOPostgresImpl implements ItemDAO {
         }
 
         this.jdbcUrl = tmpJdbc;
-        this.user = tmpUser;
-        this.password = tmpPassword;
 
-        // Test connection once (will throw SQLException if not reachable)
+        // Establish initial connection
+        try {
+            this.sharedConnection = DriverManager.getConnection(jdbcUrl);
+        } catch (SQLException e) {
+            System.err.println("Failed to establish initial connection: " + e.getMessage());
+            // We don't throw here to allow retry in getConnection()
+        }
+        
+        // Test connection
         try (Connection conn = getConnection()) {
-            // ensure table exists
             ensureTable(conn);
         }
     }
 
-    private Connection getConnection() throws SQLException {
-        if (user != null && password != null) {
-            return DriverManager.getConnection(jdbcUrl, user, password);
+    private synchronized Connection getConnection() throws SQLException {
+        if (sharedConnection == null || sharedConnection.isClosed() || !sharedConnection.isValid(2)) {
+            System.out.println("Re-establishing database connection...");
+            try {
+                if (sharedConnection != null && !sharedConnection.isClosed()) {
+                    try { sharedConnection.close(); } catch (Exception  e) {}
+                }
+            } catch (Exception e) {} // ignore close errors
+            
+            sharedConnection = DriverManager.getConnection(jdbcUrl);
         }
-        return DriverManager.getConnection(jdbcUrl);
+        return sharedConnection;
     }
 
     private void ensureTable(Connection conn) throws SQLException {
@@ -111,21 +151,24 @@ public class ItemDAOPostgresImpl implements ItemDAO {
         String sql = "INSERT INTO items (id, item_name, category, description, location, date, status, contact_info, type) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, item.getId());
-            ps.setString(2, item.getItemName());
-            ps.setString(3, item.getCategory());
-            ps.setString(4, item.getDescription());
-            ps.setString(5, item.getLocation());
-            if (item.getDate() != null) {
-                ps.setTimestamp(6, new Timestamp(item.getDate().getTime()));
-            } else {
-                ps.setTimestamp(6, new Timestamp(new Date().getTime()));
+        try {
+            Connection conn = getConnection();
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, item.getId());
+                ps.setString(2, item.getItemName());
+                ps.setString(3, item.getCategory());
+                ps.setString(4, item.getDescription());
+                ps.setString(5, item.getLocation());
+                if (item.getDate() != null) {
+                    ps.setTimestamp(6, new Timestamp(item.getDate().getTime()));
+                } else {
+                    ps.setTimestamp(6, new Timestamp(new Date().getTime()));
+                }
+                ps.setString(7, item.getStatus());
+                ps.setString(8, item.getContactInfo());
+                ps.setString(9, item.getType());
+                ps.executeUpdate();
             }
-            ps.setString(7, item.getStatus());
-            ps.setString(8, item.getContactInfo());
-            ps.setString(9, item.getType());
-            ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Error saving item to Postgres: " + e.getMessage(), e);
         }
@@ -134,8 +177,10 @@ public class ItemDAOPostgresImpl implements ItemDAO {
     @Override
     public List<Item> findAll() {
         String sql = "SELECT * FROM items ORDER BY date DESC";
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            try (ResultSet rs = ps.executeQuery()) {
+        try {
+            Connection conn = getConnection();
+            try (PreparedStatement ps = conn.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
                 return mapResultSet(rs);
             }
         } catch (SQLException e) {
@@ -146,10 +191,13 @@ public class ItemDAOPostgresImpl implements ItemDAO {
     @Override
     public List<Item> findByType(String type) {
         String sql = "SELECT * FROM items WHERE type = ? ORDER BY date DESC";
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, type);
-            try (ResultSet rs = ps.executeQuery()) {
-                return mapResultSet(rs);
+        try {
+            Connection conn = getConnection();
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, type);
+                try (ResultSet rs = ps.executeQuery()) {
+                    return mapResultSet(rs);
+                }
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error fetching items by type: " + e.getMessage(), e);
@@ -181,12 +229,15 @@ public class ItemDAOPostgresImpl implements ItemDAO {
 
         sb.append(" ORDER BY date DESC");
 
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sb.toString())) {
-            for (int i = 0; i < params.size(); i++) {
-                ps.setObject(i + 1, params.get(i));
-            }
-            try (ResultSet rs = ps.executeQuery()) {
-                return mapResultSet(rs);
+        try {
+            Connection conn = getConnection();
+            try (PreparedStatement ps = conn.prepareStatement(sb.toString())) {
+                for (int i = 0; i < params.size(); i++) {
+                    ps.setObject(i + 1, params.get(i));
+                }
+                try (ResultSet rs = ps.executeQuery()) {
+                    return mapResultSet(rs);
+                }
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error searching items: " + e.getMessage(), e);

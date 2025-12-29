@@ -1,7 +1,7 @@
 package com.campus.lostfound.controller;
 
 import com.campus.lostfound.dao.ItemDAO;
-import com.campus.lostfound.dao.ItemDAOMemoryImpl;
+
 import com.campus.lostfound.dao.ItemDAOPostgresImpl;
 import com.campus.lostfound.model.Item;
 import com.google.gson.Gson;
@@ -39,11 +39,10 @@ public class ItemServlet extends HttpServlet {
                 itemDAO = new ItemDAOPostgresImpl(databaseUrl);
                 System.out.println("Using Postgres DAO");
             } catch (Exception e) {
-                System.err.println("Failed to initialize Postgres DAO: " + e.getMessage());
-                itemDAO = new ItemDAOMemoryImpl();
+                throw new ServletException("Failed to initialize Postgres DAO", e);
             }
         } else {
-            itemDAO = new ItemDAOMemoryImpl();
+            throw new ServletException("DATABASE_URL environment variable is required for Neon PostgreSQL. Please configure it.");
         }
         gson = new GsonBuilder().setDateFormat("yyyy-MM-dd").create();
     }
