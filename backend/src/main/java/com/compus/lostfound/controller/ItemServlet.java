@@ -36,7 +36,8 @@ public class ItemServlet extends HttpServlet {
         String databaseUrl = System.getenv("DATABASE_URL");
         if (databaseUrl != null && !databaseUrl.isEmpty()) {
             try {
-                itemDAO = new ItemDAOPostgresImpl(databaseUrl);
+                com.campus.lostfound.util.DatabaseUtil.init(databaseUrl);
+                itemDAO = new ItemDAOPostgresImpl();
                 System.out.println("Using Postgres DAO");
             } catch (Exception e) {
                 throw new ServletException("Failed to initialize Postgres DAO", e);
@@ -78,6 +79,7 @@ public class ItemServlet extends HttpServlet {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
+
         String pathInfo = request.getPathInfo();
         StringBuilder sb = new StringBuilder();
         String line;
@@ -91,6 +93,20 @@ public class ItemServlet extends HttpServlet {
             Item item = gson.fromJson(sb.toString(), Item.class);
             if (item == null) {
                 throw new Exception("Invalid JSON or empty body");
+            }
+
+            // Check Authenticated User
+            String userId = item.getUserId();
+            if (userId == null || userId.isEmpty()) {
+                // Fallback to checking header
+                userId = request.getHeader("X-User-Id");
+                if (userId != null) item.setUserId(userId);
+            }
+            
+            if (item.getUserId() == null || item.getUserId().isEmpty()) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("{\"error\": \"Unauthorized. User ID required.\"}");
+                return;
             }
 
             if ("/lost".equalsIgnoreCase(pathInfo)) {
@@ -117,4 +133,43 @@ public class ItemServlet extends HttpServlet {
             response.getWriter().write("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
+
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+
+        resp.setContentType("application/json");
+        
+        String pathInfo = req.getPathInfo();
+        if (pathInfo == null || pathInfo.equals("/")) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
+        String itemId = pathInfo.startsWith("/") ? pathInfo.substring(1) : pathInfo;
+        String userId = req.getHeader("X-User-Id");
+
+        if (userId == null || userId.isEmpty()) {
+            System.out.println("Delete failed: No X-User-Id header");
+            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            resp.getWriter().write("{\"error\": \"Unauthorized\"}");
+            return;
+        }
+        System.out.println("Processing delete for itemId: " + itemId + " with userId: " + userId);
+
+        try {
+            boolean deleted = itemDAO.delete(itemId, userId);
+            if (deleted) {
+                resp.setStatus(HttpServletResponse.SC_OK);
+                resp.getWriter().write("{\"message\": \"Item deleted\"}");
+            } else {
+                resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                resp.getWriter().write("{\"error\": \"Item not found or you do not have permission to delete it\"}");
+            }
+        } catch (Exception e) {
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            resp.getWriter().write("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+
 }

@@ -14,7 +14,9 @@ import java.io.IOException;
 public class CORSFilter implements Filter {
 
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {}
+    public void init(FilterConfig filterConfig) throws ServletException {
+        System.out.println("CORSFilter initialized");
+    }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -24,6 +26,9 @@ public class CORSFilter implements Filter {
         HttpServletResponse res = (HttpServletResponse) response;
 
         String origin = req.getHeader("Origin");
+        System.out.println("CORSFilter hit! Method: " + req.getMethod() + ", Origin: " + origin);
+        
+        // Allow all origins for development
         res.setHeader("Access-Control-Allow-Origin", origin != null ? origin : "*");
         res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");

@@ -14,11 +14,13 @@ public class Item {
     private Date date;
     private String status; // LOST, FOUND, CLAIMED, etc.
     private String contactInfo;
+
     private String type; // "LOST" or "FOUND"
+    private String userId; // The ID of the user who posted this item
 
     public Item() {}
 
-    public Item(String id, String itemName, String category, String description, String location, Date date, String status, String contactInfo, String type) {
+    public Item(String id, String itemName, String category, String description, String location, Date date, String status, String contactInfo, String type, String userId) {
         this.id = id;
         this.itemName = itemName;
         this.category = category;
@@ -28,6 +30,7 @@ public class Item {
         this.status = status;
         this.contactInfo = contactInfo;
         this.type = type;
+        this.userId = userId;
     }
 
     public String getId() { return id; }
@@ -56,6 +59,9 @@ public class Item {
 
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
+
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
 
     @Override
     public String toString() {

@@ -11,4 +11,7 @@ public interface ItemDAO {
     List<Item> findAll();
     List<Item> findByType(String type);
     List<Item> search(String itemName, String category, String location, String date);
+    
+    // Delete item if it belongs to userId
+    boolean delete(String itemId, String userId);
 }
