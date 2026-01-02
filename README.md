@@ -69,7 +69,7 @@ To prevent the overhead of opening a new database connection for every HTTP requ
 We separated the database logic (`LostItemDAO`) from the business logic (Servlet). This makes the code **testable**, **maintainable**, and allows us to swap the database implementation (e.g., to SQL) without changing the Servlet code.
 
 
-## 🎨 UI/UX Design
+##  UI/UX Design
 The interface follows a "Deep Indigo + Soft Cyan" theme (`#1a237e`, `#00bcd4`) to convey trust and calmness. We use a **Dashboard** layout for quick access to recent items and clear Call-to-Action buttons for reporting.
 
 
