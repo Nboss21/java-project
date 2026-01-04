@@ -1,7 +1,7 @@
 # Campus Lost & Found Item Tracker System
 
  📌 Project Overview
-A centralized digital system for University students to report and search for lost or found items on campus. This project is built using Advanced Java Programming concepts (Servlets, MVC, DAO) and a generic #React frontend.
+A centralized digital system for University students to report and search for lost or found items on campus. This project is built using Advanced Java Programming concepts (Servlets, MVC, DAO , Tomcat ) and a generic #React frontend.
 
  🧠 Technologies Used
 
