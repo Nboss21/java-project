@@ -7,10 +7,9 @@ A centralized digital system for University students to report and search for lo
 
 #Backend (Java Enterprise)
 Java Servlets: Core controller logic.
-MongoDB: NoSQL database for flexible data storage.
+Connect Java to an online PostgreSQL database (Neon).
 MVC Architecture: Strict separation of Model, View (React), and Controller.
 DAO Pattern: Data Access Object pattern for clean database abstraction.
-Singleton Pattern: MongoDBUtil for efficient connection management.
 Filters: CORSFilter to handle cross-origin requests securely.
 Gson: For JSON serialization/deserialization.
 Apache Tomcat: Web server/container.
