@@ -1,26 +1,32 @@
+//package for the backend authServlet
 package com.campus.lostfound.controller;
 
+//import com.campus.lostfound lib
 import com.campus.lostfound.dao.UserDAO;
 import com.campus.lostfound.dao.UserDAOPostgresImpl;
 import com.campus.lostfound.model.User;
 import com.google.gson.Gson;
 
-
-import javax.servlet.ServletException;
+//import com.campus.lostfound lib
+import com.campus.lostfound.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+//import java.io.IOException lib
 import java.io.IOException;
 
 // Add webServlet authentication 
 @WebServlet("/api/auth/*")
-public class AuthServlet extends HttpServlet {
+
+    public class AuthServlet extends HttpServlet {
     private UserDAO userDAO;
     private Gson gson = new Gson();
 
     @Override
     public void init() throws ServletException {
+       
         String dbUrl = System.getenv("DATABASE_URL");
         if (dbUrl == null || dbUrl.isEmpty()) {
             throw new ServletException("DATABASE_URL environment variable not set");
@@ -33,8 +39,10 @@ public class AuthServlet extends HttpServlet {
         }
     }
 
+         //doPost
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+       
         String path = req.getPathInfo();
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -48,6 +56,7 @@ public class AuthServlet extends HttpServlet {
         }
     }
 
+        //habdleRegister
     private void handleRegister(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
             User newUser = gson.fromJson(req.getReader(), User.class);
@@ -56,6 +65,7 @@ public class AuthServlet extends HttpServlet {
                 resp.getWriter().write(gson.toJson("Missing field(s)"));
                 return;
             }
+
             
             // Check if exists
             if (userDAO.findByUsername(newUser.getUsername()) != null) {
@@ -73,12 +83,14 @@ public class AuthServlet extends HttpServlet {
         }
     }
 
+        //handleLogin
     private void handleLogin(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
             User creds = gson.fromJson(req.getReader(), User.class);
             User user = userDAO.findByUsername(creds.getUsername());
             
             if (user != null && user.getPassword().equals(creds.getPassword())) {
+                
                 // Return user info (excluding password)
                 user.setPassword(null);
                 resp.getWriter().write(gson.toJson(user));
