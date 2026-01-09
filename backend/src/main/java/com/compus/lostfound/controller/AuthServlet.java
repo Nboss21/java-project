@@ -13,7 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-
+// Add webServlet authentication 
 @WebServlet("/api/auth/*")
 public class AuthServlet extends HttpServlet {
     private UserDAO userDAO;
