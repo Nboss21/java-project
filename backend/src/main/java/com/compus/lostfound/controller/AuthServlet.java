@@ -36,12 +36,11 @@ import java.io.IOException;
         String path = req.getPathInfo();
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
-        
-        if ("/register".equals(path)) {
-            handleRegister(req, resp);
-        } else if ("/login".equals(path)) {
+            if ("/register".equals(path)) {
+                handleRegister(req, resp);
+            } else if ("/login".equals(path)) {
             handleLogin(req, resp);
-        } else {
+            } else {
             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
         }
     }
