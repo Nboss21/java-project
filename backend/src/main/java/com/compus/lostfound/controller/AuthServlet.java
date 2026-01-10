@@ -3,9 +3,10 @@ package com.campus.lostfound.controller;
 import com.campus.lostfound.dao.UserDAO;
 import com.campus.lostfound.dao.UserDAOPostgresImpl;
 import com.campus.lostfound.model.User;
+import com.campus.lostfound.ServletException;
+
 import com.google.gson.Gson;
 
-import com.campus.lostfound.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -31,7 +32,7 @@ import java.io.IOException;
             throw new ServletException("Failed to initialize AuthServlet", e);
         }
     }
-    @Override
+          @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String path = req.getPathInfo();
         resp.setContentType("application/json");
