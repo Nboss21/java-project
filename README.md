@@ -87,7 +87,7 @@ API Endpoints
 
 👥 Team & Collaboration
 This project is a group effort of 5 members.
-Project Structure: See [STRUCTURE.md](./STRUCTURE.md) for folder details.
-Team Roles: See [ROLES.md](./ROLES.md) for assigned responsibilities.
-GitHub Workflow: Detailed steps for pushing code are in [ROLES.md#github-workflow--step-by-step](./ROLES.md#github-workflow--step-by-step).
-New to GitHub?: Follow the [Beginner's Guide to Submission](./BEGINNER_GIT_GUIDE.md) for a step-by-step walkthrough.
+1)Project Structure: See [STRUCTURE.md](./STRUCTURE.md) for folder details.
+2)Team Roles: See [ROLES.md](./ROLES.md) for assigned responsibilities.
+3)GitHub Workflow: Detailed steps for pushing code are in [ROLES.md#github-workflow--step-by-step](./ROLES.md#github-workflow--step-by-step).
+4)New to GitHub?: Follow the [Beginner's Guide to Submission](./BEGINNER_GIT_GUIDE.md) for a step-by-step walkthrough.
