@@ -1,22 +1,25 @@
 package com.campus.lostfound.controller;
 
 import com.campus.lostfound.dao.ItemDAO;
-
 import com.campus.lostfound.dao.ItemDAOPostgresImpl;
+
 import com.campus.lostfound.model.Item;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
+
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.List;
 
+import java.util.List;
 /**
  * Unified Servlet to handle:
  * POST /api/items/lost
@@ -24,6 +27,7 @@ import java.util.List;
  * GET /api/items
  * GET /api/items/search
  */
+
 @WebServlet("/api/items/*")
 public class ItemServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
@@ -47,7 +51,6 @@ public class ItemServlet extends HttpServlet {
         }
         gson = new GsonBuilder().setDateFormat("yyyy-MM-dd").create();
     }
-
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.setContentType("application/json");
@@ -73,12 +76,10 @@ public class ItemServlet extends HttpServlet {
         }
         out.flush();
     }
-
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-
 
         String pathInfo = request.getPathInfo();
         StringBuilder sb = new StringBuilder();
@@ -88,27 +89,23 @@ public class ItemServlet extends HttpServlet {
                 sb.append(line);
             }
         }
-
         try {
             Item item = gson.fromJson(sb.toString(), Item.class);
             if (item == null) {
                 throw new Exception("Invalid JSON or empty body");
             }
-
             // Check Authenticated User
             String userId = item.getUserId();
             if (userId == null || userId.isEmpty()) {
                 // Fallback to checking header
                 userId = request.getHeader("X-User-Id");
                 if (userId != null) item.setUserId(userId);
-            }
-            
+            } 
             if (item.getUserId() == null || item.getUserId().isEmpty()) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write("{\"error\": \"Unauthorized. User ID required.\"}");
                 return;
             }
-
             if ("/lost".equalsIgnoreCase(pathInfo)) {
                 item.setType("LOST");
                 item.setStatus("LOST");
@@ -120,11 +117,9 @@ public class ItemServlet extends HttpServlet {
                 response.getWriter().write("{\"error\": \"Invalid path for POST. Expected /lost or /found\"}");
                 return;
             }
-
             if (item.getItemName() == null || item.getItemName().trim().isEmpty()) {
                 throw new Exception("Item name is required");
-            }
-
+            }      
             itemDAO.save(item);
             response.setStatus(HttpServletResponse.SC_CREATED);
             response.getWriter().print(gson.toJson(item));
@@ -133,7 +128,6 @@ public class ItemServlet extends HttpServlet {
             response.getWriter().write("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
-
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
@@ -144,7 +138,6 @@ public class ItemServlet extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
-
         String itemId = pathInfo.startsWith("/") ? pathInfo.substring(1) : pathInfo;
         String userId = req.getHeader("X-User-Id");
 
@@ -170,6 +163,4 @@ public class ItemServlet extends HttpServlet {
             resp.getWriter().write("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
-
-
 }
