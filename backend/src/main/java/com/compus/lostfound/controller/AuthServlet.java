@@ -3,10 +3,10 @@ package com.campus.lostfound.controller;
 import com.campus.lostfound.dao.UserDAO;
 import com.campus.lostfound.dao.UserDAOPostgresImpl;
 import com.campus.lostfound.model.User;
-import com.campus.lostfound.ServletException;
 
 import com.google.gson.Gson;
 
+import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;

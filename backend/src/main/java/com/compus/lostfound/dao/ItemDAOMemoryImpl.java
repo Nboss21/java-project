@@ -42,4 +42,15 @@ public class ItemDAOMemoryImpl implements ItemDAO {
                 .filter(item -> (date == null || date.isEmpty() || (item.getDate() != null && item.getDate().toString().contains(date))))
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public boolean delete(String itemId, String userId) {
+        if (itemId == null || userId == null) {
+            return false;
+        }
+        return items.removeIf(item ->
+                itemId.equals(item.getId()) &&
+                userId.equals(item.getUserId())
+        );
+    }
 }
